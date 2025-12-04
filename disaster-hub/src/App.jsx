@@ -15,8 +15,8 @@ const firebaseConfig = JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG || '{}');
 const initialAuthToken = import.meta.env.VITE_INITIAL_AUTH_TOKEN || null;
 
 // LLM API Configuration
-const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=";
-const API_KEY = ""; // Managed by the environment
+const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ""; // Managed by the environment
 
 // --- Utility Functions (WAV/PCM conversion, currently unused but kept for audio expansion) ---
 const base64ToArrayBuffer = (base64) => {
@@ -101,11 +101,17 @@ const AskGeminiAgent = ({ auth, userId }) => {
         const systemPrompt = "You are a disaster information agent for Sri Lanka. Provide concise, grounded answers about current road/rail status, river water levels/flood status, affected areas, and local tourism status. Use the provided search results to verify your claims.";
 
         const payload = {
-            contents: [{ parts: [{ text: query }] }],
-            // Phase 2, Step 2.3: Mandatory Grounding
-            tools: [{ "google_search": {} }],
-            systemInstruction: { parts: [{ text: systemPrompt }] },
+        system_instruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        contents: [
+          {
+             role: "user",
+             parts: [{ text: query }]
+          }
+         ]
         };
+
 
         try {
             let attempt = 0;
@@ -166,7 +172,7 @@ const AskGeminiAgent = ({ auth, userId }) => {
     };
 
     return (
-        <div className="p-6 bg-white rounded-lg shadow-xl h-full flex flex-col">
+        <div className="w-full p-6 bg-white rounded-lg shadow-xl h-full flex flex-col">
             <h2 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
                 <Search className="w-6 h-6 mr-2 text-indigo-500" /> Disaster Information Agent
             </h2>
@@ -269,7 +275,7 @@ const ForecastingModel = () => {
     const totalResourceUnits = forecastData.reduce((sum, d) => sum + d['Required Resources (Units)'], 0);
 
     return (
-        <div className="p-6 bg-white rounded-lg shadow-xl h-full flex flex-col">
+        <div className="w-full p-6 bg-white rounded-lg shadow-xl h-full flex flex-col">
             <h2 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
                 <Droplet className="w-6 h-6 mr-2 text-red-600" /> Public Health Outbreak Forecast
             </h2>
@@ -584,7 +590,7 @@ const WaterLevelMonitor = () => {
 
 
     return (
-        <div className="p-6 bg-white rounded-lg shadow-xl h-full flex flex-col">
+        <div className="w-full p-6 bg-white rounded-lg shadow-xl h-full flex flex-col">
             <h2 className="text-3xl font-bold text-gray-800 mb-2 flex items-center">
                 <Droplet className="w-6 h-6 mr-2 text-blue-600" /> Real-Time Water Monitoring (Simulated)
             </h2>
@@ -723,38 +729,59 @@ const App = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-100 font-sans p-4 sm:p-8">
-            <header className="mb-6">
-                <h1 className="text-4xl font-extrabold text-indigo-700">Disaster Resilience Hub</h1>
-                <p className="text-gray-500">Intelligent coordination and public information for recovery.</p>
-            </header>
+  <div 
+  className="min-h-screen font-sans bg-cover bg-no-repeat bg-center"
+  style={{ backgroundImage: "url('/bg.webp')" }}
+>
 
-            {/* Navigation Tabs */}
-            <nav className="flex space-x-2 border-b border-gray-300 mb-6 overflow-x-auto">
-                {navItems.map(item => (
-                    <button
-                        key={item.id}
-                        onClick={() => setCurrentPage(item.id)}
-                        className={`
-                            flex items-center px-4 py-2 text-sm font-medium rounded-t-lg transition duration-200
-                            ${currentPage === item.id
-                                ? 'bg-white text-indigo-600 border-t border-x border-gray-300'
-                                : 'text-gray-500 hover:bg-gray-200'
-                            }
-                        `}
-                    >
-                        <item.icon className="w-5 h-5 mr-2" />
-                        {item.label}
-                    </button>
-                ))}
-            </nav>
+    <div className="mx-auto max-w-7xl px-4 py-10">   {/* <-- This fixes the empty right space */}
 
-            {/* Page Content */}
-            <div className="h-[75vh]">
-                {renderPage()}
-            </div>
-        </div>
-    );
+      {/* HEADER */}
+      <header className="mb-6 flex items-center space-x-4">
+  <img 
+    src="/bgflood.png" 
+    alt="Ella Landscape" 
+    className="w-40 h-40 object-cover rounded-lg shadow-md"
+  />
+
+  <div>
+    <h1 className="text-5xl font-extrabold text-indigo-700">
+      Disaster Resilience Hub
+    </h1>
+    <p className="text-gray-500">
+      Intelligent coordination and public information for recovery.
+    </p>
+  </div>
+</header>
+
+      {/* NAVIGATION TABS */}
+      <nav className="flex space-x-2 border-b border-gray-300 mb-6 overflow-x-auto">
+        {navItems.map(item => (
+          <button
+            key={item.id}
+            onClick={() => setCurrentPage(item.id)}
+            className={`flex items-center px-4 py-2 text-sm font-medium rounded-t-lg transition duration-200
+              ${
+                currentPage === item.id
+                  ? 'bg-white text-indigo-600 border-t border-x border-gray-300'
+                  : 'text-gray-500 hover:bg-gray-200'
+              }`}
+          >
+            <item.icon className="w-5 h-5 mr-2" />
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* MAIN CONTENT */}
+      <div className="min-h-[70vh]">
+        {renderPage()}
+      </div>
+
+    </div>
+  </div>
+);
+
 };
 
 export default App;
